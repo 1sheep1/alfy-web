@@ -5,7 +5,8 @@ export default defineNuxtConfig({
   css: ['~/assets/css/main.css'],
   runtimeConfig: {
     public: {
-      apiBase: 'http://localhost:8080/api/v1'
+      apiBase: 'http://localhost:8080/api/v1',
+      contentRefreshIntervalMs: 15000
     }
   },
   app: {

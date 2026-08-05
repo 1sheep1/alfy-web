@@ -1,30 +1,24 @@
 <script setup lang="ts">
-import type { ApiContentPage } from '~/types/api'
 import { useApiClient } from '~/composables/useApi'
-
-const pageKeys: Record<string, string> = {
-  dealer: 'cooperation-dealer',
-  'product-development': 'cooperation-product-development',
-  'industry-chain': 'cooperation-industry-chain'
-}
-const fallbackImages: Record<string, string> = {
-  dealer: '/images/launch-1.jpg',
-  'product-development': '/images/aerogel-powder.jpg',
-  'industry-chain': '/images/research-institute.jpg'
-}
+import { cooperationPageDefinitions, useCooperationPages } from '~/composables/useCooperationPages'
 
 const route = useRoute()
 const slug = String(route.params.slug)
-const pageKey = pageKeys[slug]
+const definition = cooperationPageDefinitions.find(item => item.slug === slug)
 
-if (!pageKey) {
+if (!definition) {
   throw createError({ statusCode: 404, statusMessage: '合作页面不存在' })
 }
 
-const { data: content } = await useApi<ApiContentPage>(
-  `public-page-${pageKey}`,
-  `/public/pages/${pageKey}`
+const { entries, navItems } = await useCooperationPages()
+const content = computed(() =>
+  entries.value.find(entry => entry.definition.key === definition.key)?.content ?? null
 )
+
+if (!content.value) {
+  throw createError({ statusCode: 404, statusMessage: '合作页面不存在或尚未发布' })
+}
+
 const { resolveMediaUrl } = useApiClient()
 const { open } = useInquiryDialog()
 const pageData = computed(() => content.value?.contentData ?? {})
@@ -44,7 +38,7 @@ useSeoMeta({
       :title="content.title"
       :highlight="pageData.highlightText || ''"
       :description="content.summary || ''"
-      :image="resolveMediaUrl(content.coverImageUrl, fallbackImages[slug])"
+      :image="resolveMediaUrl(content.coverImageUrl, definition.fallbackImage)"
     >
       <div class="button-row">
         <button class="button button-primary" type="button" @click="open">
@@ -53,14 +47,7 @@ useSeoMeta({
       </div>
     </PageHero>
 
-    <nav class="technology-subnav" aria-label="合作模式">
-      <div class="container">
-        <NuxtLink to="/cooperation">合作总览</NuxtLink>
-        <NuxtLink to="/cooperation/dealer">经销商合作</NuxtLink>
-        <NuxtLink to="/cooperation/product-development">复合产品开发</NuxtLink>
-        <NuxtLink to="/cooperation/industry-chain">产业链合作</NuxtLink>
-      </div>
-    </nav>
+    <CooperationSubnav :items="navItems" />
 
     <section class="brief-section">
       <article

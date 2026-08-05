@@ -4,6 +4,7 @@ import { useApiClient } from '~/composables/useApi'
 
 interface TechnologyBlock {
   description: string
+  imageUrl: string
   title: string
 }
 
@@ -30,21 +31,22 @@ const pageDefaults: Record<string, { image: string; label: string }> = {
   'aerogel-composite': { image: '/images/dispersion.png', label: '气凝胶复合产品技术' },
   other: { image: '/images/research-institute.jpg', label: '其他技术' }
 }
-const contentImages: Record<string, string[]> = {
-  'aerogel-material': ['/images/aerogel-block.jpg', '/images/alumina-aerogel.jpg', '/images/aerogel-block-2.jpg'],
-  'aerogel-composite': ['/images/aerogel-powder.jpg', '/images/dispersion.png', '/images/ambient-particles.png'],
-  other: ['/images/research-institute.jpg', '/images/heated-block.jpg', '/images/aerogel-fabric.jpg']
-}
-
 function normalizeBlocks(value: unknown): TechnologyBlock[] {
   if (!Array.isArray(value)) return []
   return value
     .filter(entry => entry && typeof entry === 'object')
     .map((entry) => {
       const record = entry as Record<string, unknown>
+      const mediaId = Number(record.imageMediaId)
+      const configuredImage = typeof record.imageUrl === 'string' && record.imageUrl.trim()
+        ? record.imageUrl
+        : Number.isSafeInteger(mediaId) && mediaId > 0
+          ? `/api/v1/public/media/${mediaId}`
+          : ''
       return {
         title: String(record.title || record.name || ''),
-        description: String(record.description || record.text || record.value || '')
+        description: String(record.description || record.text || record.value || ''),
+        imageUrl: configuredImage ? resolveMediaUrl(configuredImage) : ''
       }
     })
     .filter(item => item.title || item.description)
@@ -94,9 +96,8 @@ useSeoMeta({
         </header>
         <div class="technology-detail-grid">
           <article v-for="(block, index) in capabilityRows" :key="`${block.title}-${index}`">
-            <img :src="contentImages[slug]?.[index % 3]" :alt="block.title">
+            <img v-if="block.imageUrl" :src="block.imageUrl" :alt="block.title">
             <div>
-              <span>0{{ index + 1 }}</span>
               <h3>{{ block.title }}</h3>
               <p>{{ block.description }}</p>
             </div>

@@ -31,6 +31,8 @@ export function useApiClient() {
     try {
       const response = await $fetch<ApiEnvelope<T>>(url, {
         baseURL,
+        // CMS 内容需要在发布后立即可重新获取，避免浏览器复用旧的 GET 响应。
+        cache: !fetchOptions.method || fetchOptions.method === 'GET' ? 'no-store' : undefined,
         ...fetchOptions
       } as never)
       if (response.code !== 0) {

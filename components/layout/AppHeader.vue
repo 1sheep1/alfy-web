@@ -7,7 +7,11 @@ const { open } = useInquiryDialog()
 const { resolveMediaUrl } = useApiClient()
 const menuOpen = ref(false)
 const transparentHeader = computed(() => route.path === '/')
-const overlayHeader = computed(() => transparentHeader.value || route.path.startsWith('/technology') || route.path === '/about')
+const overlaySections = ['/applications', '/cases', '/cooperation', '/news', '/technology']
+const overlayHeader = computed(() => transparentHeader.value
+  || route.path === '/about'
+  || route.path === '/products'
+  || overlaySections.some(section => route.path === section || route.path.startsWith(`${section}/`)))
 
 const [{ data: site }, { data: navigation }] = await Promise.all([
   useApi<ApiSiteSetting>('public-site-setting', '/public/site'),

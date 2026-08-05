@@ -11,6 +11,20 @@ import type { ApplicationScene, Article, CaseProject, Product } from '~/types/co
 
 type MediaResolver = (value?: null | string, fallback?: string) => string
 
+const MANAGED_RICH_TEXT_MEDIA = /(\bsrc\s*=\s*["'])(\/api\/v1\/public\/media\/\d+|alfy-media:(\d+))(["'])/gi
+
+/**
+ * 富文本由 v-html 直接渲染，不能经过 Vue 的 :src 绑定。将正文中的媒体地址
+ * 转为 API 服务的完整地址，避免开发环境错误地请求 Nuxt 的 localhost:3000。
+ */
+export function resolveRichTextHtml(value: null | string | undefined, resolveMedia: MediaResolver) {
+  if (!value) return ''
+  return value.replaceAll(MANAGED_RICH_TEXT_MEDIA, (_match, prefix: string, source: string, mediaId: string | undefined, suffix: string) => {
+    const mediaUrl = mediaId ? `/api/v1/public/media/${mediaId}` : source
+    return `${prefix}${resolveMedia(mediaUrl)}${suffix}`
+  })
+}
+
 export function formatContentDate(value?: null | string) {
   if (!value) return ''
   const date = new Date(value)
@@ -31,7 +45,7 @@ export function mapProduct(
   return {
     category: item.category,
     categoryName: item.categoryName,
-    contentHtml: 'contentHtml' in item ? item.contentHtml || '' : '',
+    contentHtml: 'contentHtml' in item ? resolveRichTextHtml(item.contentHtml, resolveMedia) : '',
     features: item.features || [],
     id: item.id,
     image: resolveMedia(item.coverImageUrl, '/images/aerogel-powder.jpg'),
@@ -61,7 +75,7 @@ export function mapCase(
   return {
     background: 'background' in item ? item.background || '' : '',
     category: item.scene || '应用案例',
-    contentHtml: 'contentHtml' in item ? item.contentHtml || '' : '',
+    contentHtml: 'contentHtml' in item ? resolveRichTextHtml(item.contentHtml, resolveMedia) : '',
     customerNeed: 'customerNeed' in item ? item.customerNeed || '' : '',
     id: item.id,
     image: resolveMedia(item.coverImageUrl, '/images/news-3.jpeg'),
@@ -88,7 +102,7 @@ export function mapArticle(
   return {
     category: category?.code || 'all',
     categoryName: category?.name || '新闻资讯',
-    contentHtml: 'contentHtml' in item ? item.contentHtml || '' : '',
+    contentHtml: 'contentHtml' in item ? resolveRichTextHtml(item.contentHtml, resolveMedia) : '',
     date: formatContentDate(item.sourcePublishedAt || item.publishedAt),
     id: item.id,
     image: resolveMedia(coverUrl, '/images/launch-2.jpg'),

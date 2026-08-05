@@ -29,7 +29,6 @@ useSeoMeta({
 <template>
   <div v-if="item">
     <PageHero :eyebrow="item.category" :title="item.title" :highlight="item.location" :description="item.summary" :image="item.image" />
-    <section class="section"><div class="container split"><div><p class="eyebrow">项目概况</p><h2>{{ item.title }}</h2><p class="lead">{{ item.background || item.summary }}</p></div><div class="info-grid" style="grid-template-columns:1fr 1fr"><article class="info-card"><span>领域</span><h3>{{ item.category }}</h3></article><article v-if="item.location" class="info-card"><span>地点</span><h3>{{ item.location }}</h3></article><article v-for="product in item.relatedProducts" :key="product.id" class="info-card"><span>相关产品</span><h3><NuxtLink :to="`/products/${product.slug}`">{{ product.name }}</NuxtLink></h3></article></div></div></section>
     <section v-if="solutionBlocks.length" class="section section-muted"><div class="container"><div class="section-heading"><div><p class="eyebrow">需求与方案</p><h2>从项目问题反推材料组合</h2></div></div><div class="info-grid"><article v-for="block in solutionBlocks" :key="block.label" class="info-card"><span>{{ block.label }}</span><h3>{{ block.title }}</h3><p>{{ block.content }}</p></article></div></div></section>
     <section v-if="item.contentHtml" class="section"><div class="container"><div class="cms-rich-text article" v-html="item.contentHtml" /></div></section>
   </div>
