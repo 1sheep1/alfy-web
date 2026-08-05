@@ -10,35 +10,36 @@ useSeoMeta({
 
 const timelineTrack = ref<HTMLElement | null>(null)
 const teamTrack = ref<HTMLElement | null>(null)
-const scrollRow = (target: HTMLElement | null, direction: number) => target?.scrollBy({ left: direction * 360, behavior: 'smooth' })
+const scrollTimeline = (direction: number) => timelineTrack.value?.scrollBy({ left: direction * 360, behavior: 'smooth' })
+const scrollTeam = (direction: number) => teamTrack.value?.scrollBy({ left: direction * 360, behavior: 'smooth' })
 
 const milestones = [
-  { date: '2015年6月', title: '气凝胶分散体技术开发', text: '核心团队开始围绕气凝胶分散、界面改性及稳定化调控开展系统研究。', image: '/images/launch-2.jpg' },
-  { date: '2019年4月', title: '气凝胶柔性复合材料中试', text: '复合材料制备路线进入中试验证，持续提升气凝胶结构保留率与应用性能。', image: '/images/launch-3.jpg' },
-  { date: '2022年7月', title: '奥飞公司成立及产业化验证', text: '湖南奥飞新材料有限公司成立，推动高校科研成果走向产品和规模化应用。', image: '/images/news-3.jpeg' },
-  { date: '2024年8月', title: '常压干燥中试线落地', text: '气凝胶中试产业化落地浏阳尚东产业园，形成材料、涂料及固废处理闭环。', image: '/images/news-4.jpeg' },
-  { date: '2026年1月', title: '新一代气凝胶技术发布', text: '新一代气凝胶及其复合材料技术发布暨产业发展签约大会在长沙举行。', image: '/images/launch-1.jpg' }
+  { date: '2026年1月', title: '新一代气凝胶常压干燥技术发布', text: '“新一代气凝胶及其复合材料技术发布暨产业发展签约大会”在湖南长沙隆重举行。', image: '/images/launch-1.jpg' },
+  { date: '2024年6月', title: '新一代气凝胶常压干燥技术突破', text: '“新一代气凝胶及其复合材料技术发布暨产业发展签约大会”在湖南长沙隆重举行。', image: '/images/launch-1.jpg' },
+  { date: '2019年4月', title: '气凝胶柔性复合材料中试', text: '“新一代气凝胶及其复合材料技术发布暨产业发展签约大会”在湖南长沙隆重举行。', image: '/images/launch-1.jpg' },
+  { date: '2015年6月', title: '气凝胶分散体技术开发', text: '“新一代气凝胶及其复合材料技术发布暨产业发展签约大会”在湖南长沙隆重举行。', image: '/images/launch-1.jpg' },
+  { date: '2022年7月', title: '奥飞公司成立及产业化验证', text: '“新一代气凝胶及其复合材料技术发布暨产业发展签约大会”在湖南长沙隆重举行。', image: '/images/launch-1.jpg' }
 ]
 
 const team = [
-  { role: '技术带头人', name: '周科朝', text: '教授、博士生导师，粉末冶金全国重点实验室主任。', image: '/images/team-5.jpg' },
-  { role: '首席科学家', name: '宋淼', text: '中南大学特聘教授、博士生导师、国家级高层次青年人才。', image: '/images/team-4.jpg' },
-  { role: '技术总监', name: '张丁日', text: '中南大学博士、奥飞新材董事长，湖南省优秀创新创业导师。', image: '/images/team-2.jpg' },
-  { role: '技术顾问', name: '宋祁朋', text: '西安电子科技大学副教授、硕士生导师、华山菁英学者。', image: '/images/team-3.jpg' },
-  { role: '技术顾问', name: '蔡圳阳', text: '中南大学副教授、青年科协秘书长，长期从事材料技术研究。', image: '/images/team-6.jpg' }
+  { role: '技术带头人', name: '周科朝', text: '教授、博士生导师，原中南大学副校长，粉末冶金全国重点实验室主任。', image: '/images/team-5.jpg' },
+  { role: '首席科学家', name: '宋淼', text: '中南大学特聘教授、博士生导师、升华学者、国家级高层次青年人才。', image: '/images/team-4.jpg' },
+  { role: '技术总监', name: '张丁日', text: '中南大学博士、奥飞新材董事长、湖南省“优秀创新创业导师”。', image: '/images/team-2.jpg' },
+  { role: '技术顾问', name: '宋祁朋', text: '西安电子科技大学副教授，硕士生导师，西安电子科技大学“华山菁英学者”人才基金获得者。', image: '/images/team-3.jpg' },
+  { role: '技术顾问', name: '蔡圳阳', text: '中南大学副教授、青年科协秘书长，中国有色金属产业联盟专家委员会委员等。', image: '/images/team-6.jpg' }
 ]
 
 const facilities = [
-  { name: '湖南省浏阳市研发基地', address: '湖南省浏阳市永安镇星辰·尚东产业小镇', image: '/images/university.jpeg' },
-  { name: '湖南省浏阳市生产基地', address: '湖南省浏阳市永安镇星辰·尚东产业小镇', image: '/images/aerogel-granules-2.jpg' },
-  { name: '湖南省长沙市天心区销售中心', address: '长沙市天心区天心数谷创芯中心1-2栋', image: '/images/news-1.jpeg' },
-  { name: '中南大学科技园办公点', address: '中南大学科技园研发总部1栋四楼407房', image: '/images/research-institute.jpg' }
+  { name: '湖南省浏阳市研发基地', address: '湖南省浏阳市永安镇星辰·尚东产业小镇', image: '/images/about-facility.webp' },
+  { name: '湖南省浏阳市生产基地', address: '湖南省浏阳市永安镇星辰·尚东产业小镇', image: '/images/about-facility.webp' },
+  { name: '湖南省长沙市天心区销售中心', address: '长沙市天心区天心数谷创芯中心1-2栋', image: '/images/about-facility.webp' },
+  { name: '中南大学科技园办公点', address: '中南大学科技园研发总部1栋四楼407房', image: '/images/about-facility.webp' }
 ]
 </script>
 
 <template>
   <div class="brief-page about-page">
-    <PageHero class="brief-hero" page-key="about" eyebrow="关于我们" title="中南大学气凝胶成果转化核心平台" image="/images/aerogel-powder.jpg" />
+    <PageHero class="brief-hero" page-key="about" eyebrow="关于我们" title="中南大学气凝胶成果转化核心平台" image="/images/about-hero.webp" />
 
     <section v-if="content?.contentHtml" class="brief-section">
       <article class="container article cms-rich-text" v-html="content.contentHtml" />
@@ -50,16 +51,16 @@ const facilities = [
         <div class="company-intro-copy">
           <p class="eyebrow">关于我们</p>
           <h2>湖南奥飞新材料有限公司</h2>
-          <p>湖南奥飞新材料有限公司成立于2022年7月25日，是一家专注于气凝胶技术开发及产业化的高新技术企业。</p>
-          <p>公司以节能、环保、安全的底层材料革新为目标，致力于为全领域节能减排、实现碳中和贡献力量。研发成员来源于中南大学粉末冶金全国重点实验室，并与多所高校及科研单位深度合作。</p>
+          <p>湖南奥飞新材料有限公司于2022年7月25日成立，是一家专注于世界十大新材料“气凝胶”技术开发及应用的有限责任公司。</p>
+          <p>公司以节能、环保、安全的底层材料革新为目标，致力于为全领域节能减排、实现碳中和贡献力量，力争成为中国气凝胶行业头部企业。</p>
+          <p>公司研发成员来源于中南大学粉末冶金全国重点实验室，与湘潭大学、西安电子科技大学等高水平科研单位深度合作，拥有国家级专家、博士等科研开发人才。团队在气凝胶涂料技术、低成本气凝胶制备技术等方面具有深厚的研发实力。产品已经推向市场并获得成功。</p>
           <div class="company-stats">
-            <article><strong>15<sup>+</sup></strong><span>气凝胶研发积淀</span></article>
-            <article><strong>30<sup>+</sup></strong><span>专利及软件著作权</span></article>
-            <article><strong>40<sup>%+</sup></strong><span>生产成本降低</span></article>
-            <article><strong>200<sup>+</sup></strong><span>累计产品产出/吨</span></article>
+            <article><strong>15<sup>+年</sup></strong><span>气凝胶研发时间</span></article>
+            <article><strong>30<sup>+项</sup></strong><span>授权发明专利</span></article>
+            <article><strong>40%</strong><small>以上</small><span>气凝胶生产成本减低</span></article>
           </div>
         </div>
-        <figure class="company-intro-media"><img src="/images/university.jpeg" alt="中南大学气凝胶研发平台"><figcaption>中南大学 · 产学研协同创新</figcaption></figure>
+        <figure class="company-intro-media"><img src="/images/about-company.webp" alt="湖南奥飞新材料有限公司办公环境"></figure>
       </div>
     </section>
 
@@ -71,15 +72,14 @@ const facilities = [
             <h2>气凝胶及其复合材料研发历程</h2>
           </header>
           <div class="carousel-arrows" aria-label="发展历程翻页">
-            <button type="button" aria-label="向前查看" @click="scrollRow(timelineTrack, -1)">←</button>
-            <button type="button" aria-label="向后查看" @click="scrollRow(timelineTrack, 1)">→</button>
+            <button type="button" aria-label="向前查看" @click="scrollTimeline(-1)">←</button>
+            <button type="button" aria-label="向后查看" @click="scrollTimeline(1)">→</button>
           </div>
         </div>
         <div ref="timelineTrack" class="brief-carousel-track milestone-track">
-          <article v-for="(item, index) in milestones" :key="item.date" class="milestone-card">
-            <span class="milestone-index">0{{ index + 1 }}</span>
-            <p class="milestone-date">{{ item.date }}</p>
-            <h3>{{ item.title }}</h3>
+          <article v-for="item in milestones" :key="item.date" class="milestone-card">
+            <p class="milestone-title">{{ item.title }}</p>
+            <h3>{{ item.date }}</h3>
             <p>{{ item.text }}</p>
             <img :src="item.image" :alt="item.title">
           </article>
@@ -95,8 +95,8 @@ const facilities = [
             <h2>十余年气凝胶攻关积淀</h2>
           </header>
           <div class="carousel-arrows" aria-label="研发团队翻页">
-            <button type="button" aria-label="向前查看" @click="scrollRow(teamTrack, -1)">←</button>
-            <button type="button" aria-label="向后查看" @click="scrollRow(teamTrack, 1)">→</button>
+            <button type="button" aria-label="向前查看" @click="scrollTeam(-1)">←</button>
+            <button type="button" aria-label="向后查看" @click="scrollTeam(1)">→</button>
           </div>
         </div>
         <div ref="teamTrack" class="brief-carousel-track team-track">

@@ -134,7 +134,7 @@ export interface ApiArticleDetail extends ApiArticleListItem {
 
 export interface ApiTechnologyPage {
   action?: ApiAction | null
-  capabilityRows?: unknown
+  capabilityRows?: ApiTechnologyBlock[] | null
   contentHtml?: null | string
   eyebrow?: null | string
   heroImageUrl?: null | string
@@ -142,7 +142,7 @@ export interface ApiTechnologyPage {
   highlightText?: null | string
   id: number
   pageKey: string
-  pillars?: unknown
+  pillars?: ApiTechnologyBlock[] | null
   publishedAt?: null | string
   seoDescription?: null | string
   seoKeywords?: null | string
@@ -153,6 +153,13 @@ export interface ApiTechnologyPage {
   title: string
   updatedAt?: null | string
   version?: number
+}
+
+export interface ApiTechnologyBlock {
+  description?: null | string
+  imageMediaId?: null | number
+  imageUrl?: null | string
+  title: string
 }
 
 export interface ApiHome {
@@ -256,6 +263,7 @@ export interface ApiCooperationContentData {
   faqTitle?: null | string
   faqs?: null | ApiContentBlock[]
   highlightText?: null | string
+  navLabel?: null | string
   process?: null | ApiContentBlock[]
   processEyebrow?: null | string
   processTitle?: null | string

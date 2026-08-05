@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import type { ApiCaseListItem, ApiHome, ApiHomeSection, PageResult } from '~/types/api'
+import type { ApiArticleDetail, ApiCaseListItem, ApiHome, ApiHomeSection, PageResult } from '~/types/api'
 import { useApiClient } from '~/composables/useApi'
 import { useContentMapper } from '~/composables/useContentMapper'
 
 useSeoMeta({ title: '新一代气凝胶及其复合产品技术', description: '奥飞新材面向建筑节能、工业节能等场景提供气凝胶材料、复合产品与应用方案。' })
 
 const { open } = useInquiryDialog()
-const { resolveMediaUrl } = useApiClient()
+const { request, resolveMediaUrl } = useApiClient()
 const { mapArticle, mapCase, mapScene } = useContentMapper()
 const [{ data: home }, { data: sectionData }, { data: caseData }] = await Promise.all([
   useApi<ApiHome>('public-home', '/public/home'),
@@ -26,7 +26,6 @@ const articles = computed(() => (home.value?.featuredArticles ?? []).map(item =>
   ...mapArticle(item, resolveMediaUrl),
   homeSlot: item.homeSlot
 })))
-const technology = computed(() => home.value?.technologyOverview ?? null)
 const activeCaseSceneKey = ref('')
 const filteredCaseEntries = computed(() => activeCaseSceneKey.value
   ? caseEntries.value.filter(({ record }) => record.sceneSlug === activeCaseSceneKey.value)
@@ -47,6 +46,48 @@ const remainingArticles = computed(() =>
 )
 const secondaryArticle = computed(() => remainingArticles.value[0])
 const newsList = computed(() => remainingArticles.value.slice(1, 3))
+
+const { data: secondaryArticleDetail } = await useAsyncData<ApiArticleDetail | null>(
+  'public-home-secondary-article-detail',
+  async () => {
+    const article = secondaryArticle.value
+    if (!article || article.summary.trim()) return null
+    return await request<ApiArticleDetail>(
+      `/public/articles/${encodeURIComponent(article.slug)}`,
+      { optional: true }
+    )
+  },
+  { default: () => null }
+)
+
+function articleExcerpt(contentHtml: null | string | undefined, title: string) {
+  if (!contentHtml) return ''
+  const plainText = contentHtml
+    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&(?:nbsp|#160);/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, "'")
+    .replace(/\s+/g, ' ')
+    .trim()
+  const withoutTitle = plainText.startsWith(title) ? plainText.slice(title.length).trim() : plainText
+  const withoutContactBlock = withoutTitle
+    .replace(/公司地址[\s\S]*?邮件：\S+\s*/i, '')
+    .trim()
+  const excerpt = withoutContactBlock || withoutTitle || plainText
+  return excerpt.length > 120 ? `${excerpt.slice(0, 120).trimEnd()}…` : excerpt
+}
+
+const secondaryArticleExcerpt = computed(() => {
+  const article = secondaryArticle.value
+  if (!article) return ''
+  const summary = article.summary.trim() || secondaryArticleDetail.value?.summary?.trim()
+  return summary || articleExcerpt(secondaryArticleDetail.value?.contentHtml, article.title)
+})
 
 const fallbackHero = {
   id: -1,
@@ -99,7 +140,9 @@ function selectScene(key: string) {
   if (!rail) return
   const card = Array.from(rail.querySelectorAll<HTMLElement>('[data-scene-key]')).find(item => item.dataset.sceneKey === key)
   if (!card) return
-  const targetLeft = card.getBoundingClientRect().left - rail.getBoundingClientRect().left + rail.scrollLeft
+  const railPaddingLeft = Number.parseFloat(window.getComputedStyle(rail).paddingLeft) || 0
+  const cardOffsetLeft = card.getBoundingClientRect().left - rail.getBoundingClientRect().left + rail.scrollLeft
+  const targetLeft = Math.max(0, cardOffsetLeft - railPaddingLeft)
   rail.scrollTo({ left: targetLeft, behavior: 'smooth' })
 }
 
@@ -151,18 +194,16 @@ onBeforeUnmount(() => {
         <div class="button-row"><NuxtLink class="button button-primary" :to="currentHeroSlide.primaryAction?.target || '/applications'">{{ currentHeroSlide.primaryAction?.label || '查看应用案例' }} <span>→</span></NuxtLink><NuxtLink v-if="currentHeroSlide.secondaryAction?.label && currentHeroSlide.secondaryAction?.target" class="button button-ghost" :to="currentHeroSlide.secondaryAction.target">{{ currentHeroSlide.secondaryAction.label }} <span>→</span></NuxtLink><button v-else class="button button-ghost" type="button" @click="open">获取项目方案 <span>→</span></button></div>
       </div>
       <div v-if="heroSlides.length > 1" class="container hero-carousel-controls" aria-label="首页轮播图">
-        <button class="hero-arrow" type="button" aria-label="上一张轮播图" @click="previousHeroSlide">←</button>
         <div class="hero-dots">
-          <button v-for="(slide, index) in heroSlides" :key="slide.id" type="button" :class="{ active: index === activeHeroSlide }" :aria-label="`切换至第 ${index + 1} 张轮播图`" :aria-current="index === activeHeroSlide ? 'true' : undefined" @click="goToHeroSlide(index)"><span>{{ String(index + 1).padStart(2, '0') }}</span></button>
+          <button v-for="(slide, index) in heroSlides" :key="slide.id" type="button" :class="{ active: index === activeHeroSlide }" :aria-label="`切换至第 ${index + 1} 张轮播图`" :aria-current="index === activeHeroSlide ? 'true' : undefined" @click="goToHeroSlide(index)" />
         </div>
-        <button class="hero-arrow" type="button" aria-label="下一张轮播图" @click="nextHeroSlide">→</button>
       </div>
       <div v-if="sectionEnabled('proof')" class="proof-strip home-hero-proof">
         <div class="container proof-grid">
-          <article><span>01</span><div><small>技术来源</small><b>中南大学粉末冶金<br>全国重点实验室</b></div></article>
-          <article><span>02</span><div><small>核心技术</small><b>新一代气凝胶<br>常压干燥技术</b></div></article>
-          <article><span>03</span><div><small>全链服务</small><b>从研发到交付的<br>完整闭环</b></div></article>
-          <article><span>04</span><div><small>客户验证</small><b>头部企业认可的<br>可靠供应商</b></div></article>
+          <article><div><small>技术来源</small><b>中南大学粉末冶金全国重点实验室</b></div></article>
+          <article><div><small>核心技术</small><b>新一代气凝胶常压干燥技术</b></div></article>
+          <article><div><small>全链服务</small><b>从研发到交付的完整闭环</b></div></article>
+          <article><div><small>客户验证</small><b>头部企业认可的可靠供应商</b></div></article>
         </div>
       </div>
     </section>
@@ -195,23 +236,24 @@ onBeforeUnmount(() => {
             <NuxtLink to="/applications">查看更多 ↗</NuxtLink>
           </div>
         </div>
-        <div v-if="applicationScenes.length" ref="sceneRail" class="application-rail" aria-label="应用场景横向列表">
-          <NuxtLink v-for="scene in applicationScenes" :key="scene.key" class="application-card" :data-scene-key="scene.key" :to="`/applications?category=${scene.key}`">
-            <img :src="scene.image" :alt="scene.name">
-            <div class="application-card-copy">
-              <span>{{ scene.name }}</span>
-              <h3>{{ scene.slogan }}</h3>
-              <p>{{ scene.summary }}</p>
-              <b>查看场景 ↗</b>
-            </div>
-          </NuxtLink>
-          <span class="application-rail-spacer" aria-hidden="true" />
+        <div v-if="applicationScenes.length" class="application-stage">
+          <div ref="sceneRail" class="application-rail" aria-label="应用场景横向列表">
+            <NuxtLink v-for="scene in applicationScenes" :key="scene.key" class="application-card" :data-scene-key="scene.key" :to="`/applications?category=${scene.key}`">
+              <img :src="scene.image" :alt="scene.name">
+              <div class="application-card-copy">
+                <h3>{{ scene.slogan }}</h3>
+                <p>{{ scene.summary }}</p>
+                <b>{{ scene.name }} ↗</b>
+              </div>
+            </NuxtLink>
+            <span class="application-rail-spacer" aria-hidden="true" />
+          </div>
+          <div v-if="applicationScenes.length > 1" class="application-controls" aria-label="切换应用场景">
+            <button type="button" aria-label="向前浏览应用场景" :disabled="activeSceneKey === applicationScenes[0]?.key" @click="scrollScenes(-1)">‹</button>
+            <button type="button" aria-label="向后浏览应用场景" :disabled="activeSceneKey === applicationScenes[applicationScenes.length - 1]?.key" @click="scrollScenes(1)">›</button>
+          </div>
         </div>
         <div v-else class="empty-state">暂无已发布应用场景。</div>
-        <div v-if="applicationScenes.length > 1" class="application-controls" aria-label="切换应用场景">
-          <button type="button" aria-label="向前浏览应用场景" @click="scrollScenes(-1)">←</button>
-          <button type="button" aria-label="向后浏览应用场景" @click="scrollScenes(1)">→</button>
-        </div>
       </div>
     </section>
 
@@ -253,19 +295,19 @@ onBeforeUnmount(() => {
       <div class="container">
         <div class="technology-head">
           <div>
-            <p class="eyebrow eyebrow-light">{{ technology?.eyebrow || homeSection('technology')?.eyebrow || '技术研发' }}</p>
-            <h2>{{ technology?.title || homeSection('technology')?.title || '新一代常压' }}<br><em>{{ technology?.highlightText || homeSection('technology')?.highlightText || '干燥技术' }}</em></h2>
-            <NuxtLink class="button button-outline" :to="technology?.action?.target || '/technology'">{{ technology?.action?.label || '与技术团队交流' }} →</NuxtLink>
+            <p class="eyebrow eyebrow-light">技术研发</p>
+            <h2>新一代常压<br><em>干燥技术</em></h2>
+            <p class="lead">突破传统超临界工艺的高投入、高能耗、难连续生产瓶颈，让气凝胶实现绿色、低成本、规模化生产。</p>
+            <NuxtLink class="button button-outline" to="/technology">与技术团队交流 →</NuxtLink>
           </div>
-          <div v-if="!technology?.contentHtml" class="technology-table">
+          <div class="technology-table">
             <div><span>技术栏目</span><span>研发内容</span><span>查看方向</span></div>
-            <div><b>气凝胶材料技术</b><span>常压干燥、粉体、分散体</span><em>材料技术 →</em></div>
-            <div><b>气凝胶复合产品技术</b><span>涂料、板材、水泥、布料</span><em>复合技术 →</em></div>
-            <div><b>其他技术</b><span>固废处理与产业化设备</span><em>技术成果 →</em></div>
+            <div><b>气凝胶材料技术</b><span>常压干燥、粉体、分散体</span><NuxtLink to="/technology/aerogel-material">材料技术 →</NuxtLink></div>
+            <div><b>气凝胶复合产品技术</b><span>涂料、板材、水泥、布料</span><NuxtLink to="/technology/aerogel-composite">复合技术 →</NuxtLink></div>
+            <div><b>其他技术</b><span>固废处理与产业化设备</span><NuxtLink to="/technology/other">技术成果 →</NuxtLink></div>
             <div><b>工艺对比</b><span>传统超临界干燥</span><em>常压设备 ↓60%+</em></div>
             <p class="technology-table-note">PCT 国际专利 1 件 · 发明专利 11 件（已授权 6 件）· 参与多项国家、行业及团体标准制定</p>
           </div>
-          <div v-else class="cms-rich-text technology-html" v-html="technology.contentHtml" />
         </div>
         <h3 class="technology-cooperation-title">奥飞新材本着开放共赢的心态，愿与伙伴构建气凝胶产业合作生态</h3>
         <div class="technology-pillars">
@@ -284,7 +326,7 @@ onBeforeUnmount(() => {
             <img :src="featuredArticle.image" :alt="featuredArticle.title">
             <div><span>{{ featuredArticle.categoryName }} · {{ featuredArticle.date }}</span><h3>{{ featuredArticle.title }}</h3><b>了解更多 →</b></div>
           </NuxtLink>
-          <NuxtLink v-if="secondaryArticle" class="news-highlight" :to="`/news/${secondaryArticle.slug}`"><span>{{ secondaryArticle.categoryName }} · {{ secondaryArticle.date }}</span><h3>{{ secondaryArticle.title }}</h3><p>{{ secondaryArticle.summary }}</p><b>了解更多 →</b></NuxtLink>
+          <NuxtLink v-if="secondaryArticle" class="news-highlight" :to="`/news/${secondaryArticle.slug}`"><span>{{ secondaryArticle.categoryName }} · {{ secondaryArticle.date }}</span><h3>{{ secondaryArticle.title }}</h3><p v-if="secondaryArticleExcerpt">{{ secondaryArticleExcerpt }}</p><b>了解更多 →</b></NuxtLink>
           <div v-if="newsList.length" class="news-list">
             <NuxtLink v-for="item in newsList" :key="item.id" :to="`/news/${item.slug}`"><img :src="item.image" :alt="item.title"><div><small>{{ item.categoryName }} · {{ item.date }}</small><h3>{{ item.title }}</h3><span>查看详情 →</span></div></NuxtLink>
           </div>
