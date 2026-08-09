@@ -2,7 +2,7 @@ export default defineNuxtConfig({
   compatibilityDate: '2026-07-01',
   devtools: { enabled: true },
   components: [{ path: '~/components', pathPrefix: false }],
-  css: ['~/assets/css/main.css'],
+  css: ['~/assets/css/main.css', '~/assets/css/mobile.css'],
   runtimeConfig: {
     public: {
       apiBase: 'http://localhost:8080/api/v1',
