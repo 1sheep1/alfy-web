@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import type { ApiArticleCategory, ApiArticleDetail, ApiArticleListItem, PageResult } from '~/types/api'
+import type { ApiArticleCategory, ApiArticleListItem, PageResult } from '~/types/api'
 import { useApiClient } from '~/composables/useApi'
 import { useContentMapper } from '~/composables/useContentMapper'
 
 useSeoMeta({ title: '新闻资讯', description: '奥飞新材公司新闻、行业新闻与技术动态。' })
-const { request, resolveMediaUrl } = useApiClient()
+const { resolveMediaUrl } = useApiClient()
 const { mapArticle } = useContentMapper()
 const [{ data: categoryData }, { data: articleData }] = await Promise.all([
   useApi<ApiArticleCategory[]>('public-article-categories', '/public/article-categories'),
@@ -25,47 +25,12 @@ const pageArticles = computed(() => {
   return filtered.value.slice(start, start + NEWS_PAGE_SIZE)
 })
 
-function articleExcerpt(contentHtml: null | string | undefined, title: string) {
-  if (!contentHtml) return ''
-  const plainText = contentHtml
-    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
-    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
-    .replace(/<[^>]+>/g, ' ')
-    .replace(/&(?:nbsp|#160);/gi, ' ')
-    .replace(/&amp;/gi, '&')
-    .replace(/&lt;/gi, '<')
-    .replace(/&gt;/gi, '>')
-    .replace(/&quot;/gi, '"')
-    .replace(/&#39;/gi, "'")
-    .replace(/\s+/g, ' ')
-    .trim()
-  const withoutTitle = plainText.startsWith(title) ? plainText.slice(title.length).trim() : plainText
-  const excerpt = withoutTitle || plainText
-  return excerpt.length > 110 ? `${excerpt.slice(0, 110).trimEnd()}…` : excerpt
-}
-
-const { data: articleExcerpts } = await useAsyncData<Record<string, string>>(
-  'public-news-article-excerpts',
-  async () => {
-    const excerpts = await Promise.all(pageArticles.value.map(async (article) => {
-      if (article.summary.trim()) return [article.slug, article.summary.trim()] as const
-      const detail = await request<ApiArticleDetail>(
-        `/public/articles/${encodeURIComponent(article.slug)}`,
-        { optional: true }
-      )
-      return [article.slug, detail?.summary?.trim() || articleExcerpt(detail?.contentHtml, article.title)] as const
-    }))
-    return Object.fromEntries(excerpts)
-  },
-  { default: () => ({}), watch: [activeCategory, newsPage] }
-)
-
 const visibleArticles = computed(() => {
   return pageArticles.value.map((article) => {
     const [year = '', month = '', day = ''] = article.date.split('-')
     return {
       ...article,
-      summary: article.summary.trim() || articleExcerpts.value[article.slug] || '',
+      summary: article.summary.trim(),
       dateDay: day || '--',
       dateYearMonth: year && month ? `${year}-${month}` : article.date
     }
@@ -124,7 +89,7 @@ watch(filtered, () => {
               <p v-if="item.summary">{{ item.summary }}</p>
               <b>查看详情 →</b>
             </div>
-            <img :src="item.image" :alt="item.title">
+            <img :src="item.image" :alt="item.title" decoding="async" loading="lazy">
           </NuxtLink>
         </div>
         <p v-else class="empty-state">该栏目暂无已发布内容。</p>
