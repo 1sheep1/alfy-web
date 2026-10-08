@@ -242,7 +242,7 @@ export interface ApiPageHero {
 
 export interface ApiContentPage {
   category?: null | string
-  contentData?: null | ApiCooperationContentData
+  contentData?: ApiAboutContentData & ApiCooperationContentData | null
   contentHtml?: null | string
   coverImageUrl?: null | string
   pageKey: string
