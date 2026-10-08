@@ -253,16 +253,19 @@ export interface ApiContentPage {
   title: string
 }
 
-export interface ApiAboutHistoryItem {
-  date?: null | string
-  imageMediaId?: null | number
-  imageUrl?: null | string
-  text?: null | string
-  title?: null | string
+export interface ApiTeamMember {
+  bio?: null | string
+  id: number
+  name: string
+  photoUrl?: null | string
+  role: string
 }
 
-export interface ApiAboutContentData {
-  historyItems?: null | ApiAboutHistoryItem[]
+export interface ApiBaseFacility {
+  address?: null | string
+  id: number
+  imageUrl?: null | string
+  name: string
 }
 
 export interface ApiContentBlock {
