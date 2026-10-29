@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ApiBaseFacility, ApiContentPage, ApiTeamMember } from '~/types/api'
+import type { ApiAboutContentData, ApiBaseFacility, ApiContentPage, ApiTeamMember } from '~/types/api'
 import { computed } from 'vue'
 import { useApiClient } from '~/composables/useApi'
 import { resolveRichTextHtml } from '~/composables/useContentMapper'
@@ -11,10 +11,21 @@ const { resolveMediaUrl } = useApiClient()
 const resolvedContentHtml = computed(() =>
   resolveRichTextHtml(content.value?.contentHtml, resolveMediaUrl),
 )
-useSeoMeta({
+const { settings: globalSeo } = await useGlobalSeo()
+await usePageSeo({
   title: () => content.value?.seoTitle || content.value?.title || '关于我们',
   description: () => content.value?.seoDescription || content.value?.summary || '了解湖南奥飞新材料有限公司、气凝胶研发历程、核心团队与产业布局。',
-  keywords: () => content.value?.seoKeywords || ''
+  keywords: () => content.value?.seoKeywords || '',
+  image: () => content.value?.coverImageUrl || '',
+  jsonLd: () => ({
+    '@context': 'https://schema.org',
+    '@type': 'AboutPage',
+    name: content.value?.title || '关于我们',
+    description: content.value?.summary || '',
+    url: new URL('/about', globalSeo.value.canonicalOrigin).toString(),
+    isPartOf: { '@id': `${globalSeo.value.canonicalOrigin}/#website` },
+    about: { '@id': `${globalSeo.value.canonicalOrigin}/#organization` }
+  })
 })
 
 const timelineTrack = ref<HTMLElement | null>(null)
@@ -38,6 +49,27 @@ const defaultMilestones: TimelineItem[] = [
   { date: '2022年7月', title: '奥飞公司成立及产业化验证', text: '“新一代气凝胶及其复合材料技术发布暨产业发展签约大会”在湖南长沙隆重举行。', image: '/images/about-history-05.png' },
   { date: '2026年', title: '', text: '', image: '/images/about-history-06.jpg' }
 ]
+
+const milestones = computed<TimelineItem[]>(() => {
+  const aboutData = content.value?.contentData as ApiAboutContentData | null | undefined
+  if (!Array.isArray(aboutData?.historyItems) || aboutData.historyItems.length === 0) {
+    return defaultMilestones
+  }
+
+  return aboutData.historyItems.map((item, index) => {
+    const fallback = defaultMilestones[index]
+    const mediaId = Number(item.imageMediaId)
+    const image = Number.isSafeInteger(mediaId) && mediaId > 0
+      ? `/api/v1/public/media/${mediaId}`
+      : item.imageUrl || fallback?.image || ''
+    return {
+      date: item.date?.trim() || fallback?.date || '',
+      image: resolveMediaUrl(image),
+      text: item.text?.trim() || fallback?.text || '',
+      title: item.title?.trim() || fallback?.title || ''
+    }
+  })
+})
 
 // 后台尚未维护数据时的兜底内容（与迁移前页面展示一致）；
 // 后台配置后以 /public/about 接口返回为准，图片未配置时按名称回退到原有静态图。
