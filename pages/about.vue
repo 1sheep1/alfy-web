@@ -56,19 +56,21 @@ const milestones = computed<TimelineItem[]>(() => {
     return defaultMilestones
   }
 
-  return aboutData.historyItems.map((item, index) => {
-    const fallback = defaultMilestones[index]
-    const mediaId = Number(item.imageMediaId)
-    const image = Number.isSafeInteger(mediaId) && mediaId > 0
-      ? `/api/v1/public/media/${mediaId}`
-      : item.imageUrl || fallback?.image || ''
-    return {
-      date: item.date?.trim() || fallback?.date || '',
-      image: resolveMediaUrl(image),
-      text: item.text?.trim() || fallback?.text || '',
-      title: item.title?.trim() || fallback?.title || ''
-    }
-  })
+  return aboutData.historyItems
+    .map((item, index) => {
+      const fallback = defaultMilestones[index]
+      const mediaId = Number(item.imageMediaId)
+      const image = Number.isSafeInteger(mediaId) && mediaId > 0
+        ? `/api/v1/public/media/${mediaId}`
+        : item.imageUrl || fallback?.image || ''
+      return {
+        date: item.date?.trim() || fallback?.date || '',
+        image: resolveMediaUrl(image),
+        text: item.text?.trim() || fallback?.text || '',
+        title: item.title?.trim() || fallback?.title || ''
+      }
+    })
+    .filter((item) => item.date || item.title || item.text || item.image)
 })
 
 // 后台尚未维护数据时的兜底内容（与迁移前页面展示一致）；
